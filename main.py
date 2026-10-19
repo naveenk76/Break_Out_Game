@@ -284,6 +284,8 @@ class Brick:
         return (dx * dx + dy * dy) <= (r * r)
 
 
+
+# HUD
 # ============================================================
 # HUD
 # ============================================================
@@ -311,6 +313,7 @@ class HUD:
         self.title.write("B R E A K O U T", align="center",
                          font=("Courier New", 18, "bold"))
 
+        # Create overlay LAST so it has the highest draw priority
         self.overlay = turtle.Turtle()
         self.overlay.hideturtle()
         self.overlay.penup()
@@ -326,12 +329,30 @@ class HUD:
         self.lives.write(hearts.strip(), align="right",
                          font=("Courier New", 18, "bold"))
 
-    def show_overlay(self, message, color):
+    def show_overlay(self, message, color, game_instance):
+        # 1. Hide all bricks so they don't cover the text
+        for brick in game_instance.bricks:
+            brick.t.hideturtle()
+
+        # 2. Clear previous overlay text
         self.overlay.clear()
+        self.overlay.clearstamps()
+
+        # 3. Draw a solid background panel to hide the ball/trail behind text
+        self.overlay.goto(0, 0)
+        self.overlay.shape("square")
+        self.overlay.shapesize(stretch_wid=6, stretch_len=22)  # Panel size
+        self.overlay.color("#0a0a1e")
+        self.overlay.stamp()
+        self.overlay.shape("arrow")  # reset shape
+
+        # 4. Draw Main Message
         self.overlay.goto(0, 60)
         self.overlay.color(color)
         self.overlay.write(message, align="center",
                            font=("Courier New", 48, "bold"))
+
+        # 5. Draw Sub-message
         self.overlay.goto(0, -20)
         self.overlay.color("#cccccc")
         self.overlay.write("Press  SPACE  to play again",
@@ -340,11 +361,10 @@ class HUD:
 
     def clear_overlay(self):
         self.overlay.clear()
+        self.overlay.clearstamps()
 
 
-# ============================================================
 # GAME
-# ============================================================
 class Breakout:
     def __init__(self, cfg):
         self.cfg = cfg
@@ -462,7 +482,7 @@ class Breakout:
         self.hud.update_lives(self.lives)
         if self.lives <= 0:
             self.game_over = True
-            self.hud.show_overlay("GAME OVER", "#ff1744")
+            self.hud.show_overlay("GAME OVER", "#ff1744",self)
         else:
             self.paddle.reset()
             self.ball.reset()
@@ -471,7 +491,7 @@ class Breakout:
 
     def _win(self):
         self.game_over = True
-        self.hud.show_overlay("YOU WIN!", "#00e676")
+        self.hud.show_overlay("YOU WIN!", "#00e676",self)
 
     # ---------- COLLISION ----------
     def _handle_paddle_collision(self):
@@ -564,9 +584,8 @@ class Breakout:
             self.screen.update()
 
 
-# ============================================================
+
 # ENTRY POINT
-# ============================================================
 if __name__ == "__main__":
     config = Config()
     game = Breakout(config)
